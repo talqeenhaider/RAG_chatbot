@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+ 
+<style>
+ 
+    :root {
+        --ink: #1B1F27;
+        --ink-soft: #5B6270;
+        --line: #E4E7EC;
+        --surface: #ffffff;
+        --canvas: #F5F6F8;
+        --accent: #2C4BE0;
+        --accent-dark: #1F38B0;
+        --accent-tint: #EEF1FE;
+        --ok: #1F9D66;
+        --ok-tint: #E9F8F0;
+    }
+ 
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+ 
+    body {
+        font-family: 'Inter', Arial, sans-serif;
+        background: var(--canvas);
+        color: var(--ink);
+        height: 100vh;
+        overflow: hidden;
+    }
+ 
+    .app {
+        height: 100vh;
+        display: grid;
+        grid-template-rows: 60px 1fr;
+    }
+ 
+    /* ============ TOP BAR ============ */
+ 
+    .topbar {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 24px;
+        gap: 10px;
+    }
+ 
+    .mark {
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
+        background: var(--accent);
+    }
+ 
+    .topbar h1 {
+        font-family: 'Sora', sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+ 
+    /* ============ LAYOUT ============ */
+ 
+    .layout {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        min-height: 0;
+    }
+ 
+    /* ============ MAIN / CHAT ============ */
+ 
+    .main {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        border-right: 1px solid var(--line);
+    }
+ 
+    .hero {
+        padding: 56px 40px 28px;
+        text-align: center;
+    }
+ 
+    .hero h2 {
+        font-family: 'Sora', sans-serif;
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+ 
+    .hero p {
+        margin-top: 8px;
+        font-size: 14.5px;
+        color: var(--ink-soft);
+    }
+ 
+    .chat-box {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 40px 20px;
+        display: flex;
+        flex-direction: column;
+    }
+ 
+    .message {
+        display: flex;
+        margin-bottom: 14px;
+    }
+ 
+    .user { justify-content: flex-end; }
+    .bot { justify-content: flex-start; }
+ 
+    .message-content {
+        max-width: 68%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        line-height: 1.55;
+        font-size: 14.5px;
+    }
+ 
+    .user .message-content {
+        background: var(--accent);
+        color: white;
+        border-bottom-right-radius: 3px;
+    }
+ 
+    .bot .message-content {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--ink);
+        border-bottom-left-radius: 3px;
+    }
+ 
+    .input-area {
+        padding: 16px 40px 24px;
+        display: flex;
+        gap: 10px;
+        border-top: 1px solid var(--line);
+        background: var(--surface);
+    }
+ 
+    #question {
+        flex: 1;
+        padding: 13px 16px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        outline: none;
+        font-size: 14.5px;
+        font-family: inherit;
+    }
+ 
+    #question:focus { border-color: var(--accent); }
+ 
+    #question:disabled { background: var(--canvas); }
+ 
+    #send-btn {
+        padding: 0 22px;
+        border: none;
+        border-radius: 10px;
+        background: var(--accent);
+        color: white;
+        cursor: pointer;
+        font-size: 14.5px;
+        font-weight: 500;
+    }
+ 
+    #send-btn:hover:not(:disabled) { background: var(--accent-dark); }
+ 
+    #send-btn:disabled { background: #C6CBD6; cursor: not-allowed; }
+ 
+    /* ============ RIGHT PANEL ============ */
+ 
+    .side {
+        background: var(--surface);
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .message-content {
+    white-space: pre-line;
+    }
+ 
+    .dropzone {
+        border: 1.5px dashed #C7CEDE;
+        border-radius: 12px;
+        background: var(--accent-tint);
+        padding: 26px 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color .15s ease;
+    }
+ 
+    .dropzone:hover { border-color: var(--accent); }
+ 
+    .dropzone .icon {
+        width: 38px;
+        height: 38px;
+        margin: 0 auto 10px;
+        border-radius: 9px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+ 
+    .dropzone .title {
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--ink);
+    }
+ 
+    .dropzone .sub {
+        margin-top: 3px;
+        font-size: 12px;
+        color: var(--ink-soft);
+    }
+ 
+    #pdf-file { display: none; }
+ 
+    #upload-btn {
+        width: 100%;
+        padding: 11px;
+        border: none;
+        border-radius: 9px;
+        background: var(--accent);
+        color: white;
+        cursor: pointer;
+        font-size: 13.5px;
+        font-weight: 500;
+    }
+ 
+    #upload-btn:hover:not(:disabled) { background: var(--accent-dark); }
+ 
+    #upload-btn:disabled { background: #C6CBD6; cursor: not-allowed; }
+ 
+    .section-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        text-transform: none;
+    }
+ 
+    .doc-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        font-size: 13px;
+    }
+ 
+    .doc-row.ready {
+        border-color: var(--ok);
+        background: var(--ok-tint);
+    }
+ 
+    .doc-row .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #C6CBD6;
+        flex-shrink: 0;
+    }
+ 
+    .doc-row.ready .dot { background: var(--ok); }
+ 
+    .doc-row .name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ink);
+    }
+ 
+    .doc-row .status {
+        font-size: 11.5px;
+        color: var(--ink-soft);
+    }
+ 
+    .doc-row.ready .status { color: var(--ok); }
+ 
+    .progress-container { display: none; }
+ 
+    .progress-background {
+        width: 100%;
+        height: 6px;
+        background: var(--line);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+ 
+    .progress-bar {
+        width: 0%;
+        height: 100%;
+        background: var(--accent);
+        border-radius: 20px;
+        transition: width 0.3s ease;
+    }
+ 
+    #progress-text {
+        margin-top: 6px;
+        font-size: 12px;
+        color: var(--ink-soft);
+    }
+ 
+</style>
+</head>
+ 
+<body>
+ 
+<div class="app">
+ 
+    <div class="topbar">
+        <div class="mark"></div>
+        <h1>Document Assistant</h1>
+    </div>
+ 
+    <div class="layout">
+ 
+        <!-- ================= MAIN CHAT ================= -->
+ 
+        <div class="main">
+ 
+            <div class="hero">
+                <h2>Ask your documents</h2>
+                <p>Upload a file on the right, then ask anything about it.</p>
+            </div>
+ 
+            <div class="chat-box" id="chat-box">
+                <div class="message bot">
+                    <div class="message-content">
+                        Hi! Upload a document to get started. Once it's processed, ask me anything about it.
+                    </div>
+                </div>
+            </div>
+ 
+            <div class="input-area">
+                <input
+                    type="text"
+                    id="question"
+                    placeholder="Upload a document first..."
+                    autocomplete="off"
+                    disabled
+                >
+                <button id="send-btn" disabled>Send</button>
+            </div>
+ 
+        </div>
+ 
+        <!-- ================= RIGHT PANEL ================= -->
+ 
+        <div class="side">
+ 
+            <label for="pdf-file" class="dropzone">
+                <div class="icon">📄</div>
+                <div class="title">Upload new document</div>
+                <div class="sub">Click to upload · PDF</div>
+            </label>
+ 
+            <input type="file" id="pdf-file" accept=".pdf">
+ 
+            <button id="upload-btn">Upload &amp; Process</button>
+ 
+            <div class="progress-container" id="progress-container">
+                <div class="progress-background">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+                <div id="progress-text">Preparing...</div>
+            </div>
+ 
+            <div>
+                <div class="section-label" style="margin-bottom:10px;">Documents</div>
+                <div class="doc-row" id="doc-row" style="display:none;">
+                    <div class="dot"></div>
+                    <div class="name" id="doc-name">—</div>
+                    <div class="status" id="doc-status">—</div>
+                </div>
+            </div>
+ 
+        </div>
+ 
+    </div>
+ 
+</div>
+ 
+<script>
+ 
+const pdfFile = document.getElementById("pdf-file");
+const uploadButton = document.getElementById("upload-btn");
+const progressContainer = document.getElementById("progress-container");
+const progressBar = document.getElementById("progress-bar");
+const progressText = document.getElementById("progress-text");
+const questionInput = document.getElementById("question");
+const sendButton = document.getElementById("send-btn");
+const chatBox = document.getElementById("chat-box");
+const docRow = document.getElementById("doc-row");
+const docName = document.getElementById("doc-name");
+const docStatus = document.getElementById("doc-status");
+ 
+pdfFile.addEventListener("change", function () {
+    if (pdfFile.files.length > 0) {
+        docRow.style.display = "flex";
+        docRow.classList.remove("ready");
+        docName.innerText = pdfFile.files[0].name;
+        docStatus.innerText = "Not processed";
+    }
+});
+ 
+function addMessage(message, type) {
+    const messageDiv = document.createElement("div");
+    messageDiv.classList.add("message", type);
+ 
+    const content = document.createElement("div");
+    content.classList.add("message-content");
+    content.innerText = message;
+ 
+    messageDiv.appendChild(content);
+    chatBox.appendChild(messageDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+ 
+uploadButton.addEventListener("click", async function () {
+ 
+    if (pdfFile.files.length === 0) {
+        alert("Please select a PDF first.");
+        return;
+    }
+ 
+    const file = pdfFile.files[0];
+ 
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+        alert("Only PDF files are allowed.");
+        return;
+    }
+ 
+    const formData = new FormData();
+    formData.append("file", file);
+ 
+    uploadButton.disabled = true;
+    progressContainer.style.display = "block";
+    progressBar.style.width = "10%";
+    progressText.innerText = "Uploading document...";
+ 
+    try {
+ 
+        setTimeout(() => {
+            progressBar.style.width = "30%";
+            progressText.innerText = "Reading document...";
+        }, 500);
+ 
+        setTimeout(() => {
+            progressBar.style.width = "50%";
+            progressText.innerText = "Creating chunks...";
+        }, 1000);
+ 
+        setTimeout(() => {
+            progressBar.style.width = "70%";
+            progressText.innerText = "Creating embeddings...";
+        }, 1500);
+ 
+        setTimeout(() => {
+            progressBar.style.width = "85%";
+            progressText.innerText = "Building vector database...";
+        }, 2000);
+ 
+        const response = await fetch("/upload", {
+            method: "POST",
+            body: formData
+        });
+ 
+        const data = await response.json();
+ 
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Document processing failed.");
+        }
+ 
+        progressBar.style.width = "100%";
+        progressText.innerText = "Ready ✓";
+ 
+        docRow.classList.add("ready");
+        docStatus.innerText = "Ready";
+ 
+        questionInput.disabled = false;
+        sendButton.disabled = false;
+        questionInput.placeholder = "Ask a question about your document...";
+ 
+        addMessage("Your document is ready. Ask me anything about it.", "bot");
+ 
+    }
+    catch (error) {
+        console.error(error);
+        progressBar.style.width = "0%";
+        progressText.innerText = "Processing failed.";
+        docStatus.innerText = "Failed";
+        alert(error.message || "Something went wrong.");
+    }
+ 
+    uploadButton.disabled = false;
+ 
+});
+ 
+async function sendQuestion() {
+ 
+    const question = questionInput.value.trim();
+    if (!question) return;
+ 
+    addMessage(question, "user");
+    questionInput.value = "";
+    sendButton.disabled = true;
+ 
+    addMessage("Thinking...", "bot");
+ 
+    try {
+ 
+        const response = await fetch("/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question: question })
+        });
+ 
+                const data = await response.json();
+
+        let finalText = data.answer;
+
+        if (data.pages && data.pages.length > 0) {
+            finalText += "\n\nSource: Page " + data.pages.join(", ");
+        }
+
+        const botMessages = document.querySelectorAll(".bot");
+        const lastBot = botMessages[botMessages.length - 1];
+        lastBot.querySelector(".message-content").innerText = finalText;
+ 
+    }
+    catch (error) {
+        console.error(error);
+        const botMessages = document.querySelectorAll(".bot");
+        const lastBot = botMessages[botMessages.length - 1];
+        lastBot.querySelector(".message-content").innerText = "Sorry, something went wrong.";
+    }
+ 
+    sendButton.disabled = false;
+    questionInput.focus();
+ 
+}
+ 
+sendButton.addEventListener("click", sendQuestion);
+ 
+questionInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") sendQuestion();
+});
+ 
+</script>
+ 
+</body>
+</html>
+ 
